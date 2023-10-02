@@ -19,56 +19,6 @@ assert sysinfo.platform_bits==64
 
 
 
-def acf(x,axis=-1,return_power=False):
-    """
-    Compute the autocorrelation function of a given time series. According to the Wiener-Khintchine theorem,
-    the autocorrelation function and power spectrum are Fourier transform duals. The mean is subtracted
-    <f(t)f(t+dt)>-<f(t)>^2
-
-    Parameters
-    ----------
-    x : ndarray
-    axis : int,-1
-    return_power: bool,False
-        If True, return power spectrum.
-
-    Returns
-    -------
-    acf : ndarray
-    S : ndarray
-        Power.
-    """
-    w = fft.fft(x-np.expand_dims(x.mean(axis=axis),axis),axis=axis)
-    S = np.abs(w)**2
-    # We know this must be real because the input signal is all real.
-    acf = fft.ifft(S,axis=axis).real
-
-    if x.ndim==1 or axis==0:
-        if x.ndim>1:
-            acf /= np.take(acf,[0],axis=axis)
-        else:
-            acf /= acf[0]
-
-        acf = acf[:len(acf)//2]
-    else:
-        acf /= np.take(acf,[0],axis=axis)
-        acf = acf[:,:acf.shape[1]//2]
-
-    if return_power:
-        return acf,S
-    else:
-        return acf
-
-def _acf(x,maxlag,axis=-1):
-    """
-    Calculating autocorrelation function in slow way.
-    2017-01-20
-    """
-    acf=np.ones((maxlag+1))
-    for i in range(1,maxlag+1):
-        acf[i]=np.corrcoef(x[:-i],x[i:])[0,1]
-    return acf
-
 def ccf(x,y,length=20):
     """
     Compute cross correlation function as a function of lag between two vectors.
@@ -140,64 +90,6 @@ def has_multiple_unique_values(x):
 # ===================================================================================== #
 # Statistical distributions
 # ===================================================================================== #
-def ECDF(x, conf_interval=None, n_boot_samples=250, as_delta=True):
-    """Wrapper for statsmodels ECDF also including bootstrapped error bars.
-
-    Parameters
-    ----------
-    x : ndarray
-    conf_interval : twople, None
-        twople specifying lower and upper percentiles for conf bounds
-    n_boot_samples : int, 250
-
-    Returns
-    -------
-    function
-        ECDF
-    function (optional)
-        Linearly interpolated lower confidence bounds.
-    function (optional)
-        Linearly interpolated upper confidence bounds.
-    """
-
-    from statsmodels.distributions import ECDF
-    from scipy.interpolate import interp1d
-
-    ecdf = ECDF(x)
-    
-    if not conf_interval:
-        return ecdf
-    
-    assert x.ndim==1
-    assert conf_interval[0]<50 and conf_interval[1]>50
-    ux = np.unique(x)
-    ecdfSample = np.zeros((n_boot_samples, ux.size))
-    for i in range(n_boot_samples):
-        x_ = np.random.choice(x, size=x.size)
-        ecdfSample[i] = ECDF(x_)(ux)
-
-    # anything outside interval returns 0 or 1 depending on whether it is below or above interval
-    if as_delta:
-        return (ecdf,
-                interp1d(ux, ecdf(ux)-np.percentile(ecdfSample, conf_interval[0], axis=0),
-                         kind='previous',
-                         fill_value=(0,1),
-                         bounds_error=False),
-                interp1d(ux, np.percentile(ecdfSample, conf_interval[1], axis=0)-ecdf(ux),
-                         kind='previous',
-                         fill_value=(0,1),
-                         bounds_error=False))
-    return (ecdf,
-            interp1d(ux, np.percentile(ecdfSample, conf_interval[0], axis=0),
-                     kind='previous',
-                     fill_value=(0,1),
-                     bounds_error=False),
-            interp1d(ux, np.percentile(ecdfSample, conf_interval[1], axis=0),
-                     kind='previous',
-                     fill_value=(0,1),
-                     bounds_error=False))
-
-
 class DiscretePowerLaw():
     _default_lower_bound=1
     _default_upper_bound=np.inf
