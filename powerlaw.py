@@ -1167,7 +1167,6 @@ class ExpTruncPowerLaw():
         lower_bound : float, 1
         rng : np.random.RandomState
         """
-
         assert el > 1e-8
         assert alpha > 1
         assert lower_bound > 0
@@ -1481,7 +1480,7 @@ class ExpTruncDiscretePowerLaw(DiscretePowerLaw):
             return pdf
         
         el = self.el
-        Z = ( float(polylog(self.alpha, np.exp(-el))) - (np.arange(1, lower_bound)**-self.alpha *
+        Z = ( float(polylog(self.alpha, np.exp(-el)).real) - (np.arange(1, lower_bound)**-self.alpha *
               np.exp(-el * np.arange(1,lower_bound))).sum() )
         return np.vectorize(lambda x: x**-self.alpha * np.exp(-el * x) / Z)
 
@@ -1497,7 +1496,7 @@ class ExpTruncDiscretePowerLaw(DiscretePowerLaw):
         alpha = self.alpha
         lower_bound = self.lower_bound
 
-        Z = ( float(polylog(alpha, np.exp(-el))) - (np.arange(1, lower_bound)**-alpha *
+        Z = ( float(polylog(alpha, np.exp(-el)).real) - (np.arange(1, lower_bound)**-alpha *
               np.exp(-el*np.arange(1,lower_bound))).sum() )
         return np.vectorize(lambda x: ( np.arange(lower_bound, int(x)+1)**-alpha *
                                         np.exp(-el * np.arange(lower_bound, int(x)+1)) ).sum()/Z)
@@ -1634,7 +1633,7 @@ class ExpTruncDiscretePowerLaw(DiscretePowerLaw):
         # simply calculate Z by summing up to infinity and then subtracting all terms up to the
         # lower_bound that should be ignored
         lower_bound_range = np.arange(1, self.lower_bound)
-        Z = (float(polylog(alpha, np.exp(-el))) - (lower_bound_range**-alpha *
+        Z = (float(polylog(alpha, np.exp(-el)).real) - (lower_bound_range**-alpha *
              np.exp(-el * lower_bound_range)).sum())
         return -alpha * np.log(X) - el * X - np.log(Z)
 
